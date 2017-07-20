@@ -27,7 +27,7 @@ You first need an installed [nodejs] (LTS version is fine).
 Then just run :
 
 ```sh
-npm instal
+npm install
 npm run standalone
 ```
 
