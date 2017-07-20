@@ -78,7 +78,7 @@ function fetchBillsAttempts () {
 
 function fetchBillingInfo () {
   log('info', 'Fetching bill info')
-  return rq('https://espace-client.sfr.fr/facture-mobile/consultation')
+  return rq('https://espace-client-red.sfr.fr/facture-mobile/consultation')
   .catch(err => {
     log('error', err.message, 'Error while fetching billing info')
     throw err
@@ -88,7 +88,7 @@ function fetchBillingInfo () {
 function parsePage ($) {
   const result = []
   moment.locale('fr')
-  const baseURL = 'https://espace-client.sfr.fr'
+  const baseURL = 'https://espace-client-red.sfr.fr'
 
   const firstBill = $('#facture')
   const firstBillUrl = $('#lien-telecharger-pdf').attr('href')
@@ -107,7 +107,7 @@ function parsePage ($) {
       date: firstBillDate,
       amount: parseFloat(price),
       fileurl: `${baseURL}${firstBillUrl}`,
-      filename: `${firstBillDate.format('YYYY_MM')}_SfrRed.pdf`,
+      filename: getFileName(firstBillDate),
       vendor: 'SFR RED'
     }
 
@@ -135,7 +135,7 @@ function parsePage ($) {
         date,
         amount: prix,
         fileurl: pdf,
-        filename: `${date.format('YYYY_MM')}_SfrRed.pdf`
+        filename: getFileName(date)
       }
 
       result.push(bill)
@@ -147,4 +147,8 @@ function parsePage ($) {
   log('info', 'Successfully parsed the page')
 
   return result
+}
+
+function getFileName (date) {
+  return `${date.format('YYYY_MM')}_SfrRed.pdf`
 }
