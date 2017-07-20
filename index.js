@@ -1,6 +1,6 @@
 const moment = require('moment')
 
-const {log, BaseKonnector, addData, filterData, saveFiles, request} = require('cozy-konnector-libs')
+const {log, BaseKonnector, addData, filterData, saveFiles, request, retry} = require('cozy-konnector-libs')
 
 const rq = request({
   cheerio: true,
@@ -10,14 +10,27 @@ const rq = request({
   headers: {}
 })
 
+const DOCTYPE = 'io.cozy.bills'
+
 module.exports = new BaseKonnector(function fetch (fields) {
-  return getToken()
+  return retry(getToken, {
+    interval: 5000,
+    throw_original: true
+  })
   .then(token => logIn(token, fields))
-  .then(() => fetchBillingInfo())
-  .then($ => parsePage($))
+  .then(() => retry(fetchBillsAttempts, {
+    interval: 5000,
+    throw_original: true
+  }))
   .then(entries => saveFiles(entries, fields.folderPath, Date.now() + 60 * 1000))
-  .then(entries => filterData(entries, 'io.cozy.bills'))
-  .then(entries => addData(entries, 'io.cozy.bills'))
+  .then(entries => filterData(entries, DOCTYPE))
+  .then(entries => addData(entries, DOCTYPE))
+  .catch(err => {
+    // Connector is not in error if there is not entry in the end
+    // It may be simply an empty account
+    if (err.message === 'NO_ENTRY') return []
+    throw err
+  })
 })
 
 // Procedure to get the login token
@@ -25,6 +38,10 @@ function getToken () {
   log('info', 'Logging in on Sfr RED Website...')
   return rq('https://www.sfr.fr/bounce?target=//www.sfr.fr/sfr-et-moi/bounce.html&casforcetheme=mire-sfr-et-moi&mire_layer')
   .then($ => $('input[name=lt]').val())
+  .then(token => {
+    if (!token) throw new Error('BAD_TOKEN')
+    return token
+  })
 }
 
 function logIn (token, fields) {
@@ -50,7 +67,16 @@ function logIn (token, fields) {
   })
 }
 
-function fetchBillingInfo (requiredFields, bills, data, next) {
+function fetchBillsAttempts () {
+  return fetchBillingInfo()
+  .then(parsePage)
+  .then(entries => {
+    if (entries.length === 0) throw new Error('NO_ENTRY')
+    return entries
+  })
+}
+
+function fetchBillingInfo () {
   log('info', 'Fetching bill info')
   return rq('https://espace-client.sfr.fr/facture-mobile/consultation')
   .catch(err => {
