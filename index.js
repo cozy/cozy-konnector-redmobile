@@ -1,119 +1,67 @@
-const request = require('request').defaults({
-  jar: true
-})
-// require('request-debug')(request)
 const moment = require('moment')
-const cheerio = require('cheerio')
 
-const {log, baseKonnector, filterExisting, saveDataAndFile, models} = require('cozy-konnector-libs')
-const Bill = models.bill
+const {log, BaseKonnector, addData, filterData, saveFiles, request} = require('cozy-konnector-libs')
 
-// Konnector
-module.exports = baseKonnector.createNew({
-  name: 'SFR Mobile',
-  vendorLink: 'espace-client.sfr.fr/facture-mobile/consultation',
-  category: 'telecom',
-  color: {
-    hex: '#9E0017',
-    css: 'linear-gradient(90deg, #EF0001 0%, #9E0017 100%)'
-  },
+const rq = request({
+  cheerio: true,
+  json: false,
+  jar: true,
+  // debug: true,
+  headers: {}
+})
 
-  dataType: ['bill'],
-
-  models: [Bill],
-  fetchOperations: [
-    getToken,
-    logIn,
-    fetchBillingInfo,
-    parsePage,
-    customFilterExisting,
-    customSaveDataAndFile
-  ]
+module.exports = new BaseKonnector(function fetch (fields) {
+  return getToken()
+  .then(token => logIn(token, fields))
+  .then(() => fetchBillingInfo())
+  .then($ => parsePage($))
+  .then(entries => saveFiles(entries, fields.folderPath, Date.now() + 60 * 1000))
+  .then(entries => filterData(entries, 'io.cozy.bills'))
+  .then(entries => addData(entries, 'io.cozy.bills'))
 })
 
 // Procedure to get the login token
-function getToken (requiredFields, bills, data, next) {
-  const url = 'https://www.sfr.fr/bounce?target=//www.sfr.fr/sfr-et-moi/bounce.html&casforcetheme=mire-sfr-et-moi&mire_layer'
-  const options = {
-    url,
-    method: 'GET'
-  }
-
-  log('info', 'Logging in on Sfr Website...')
-
-  request(options, (err, res, body) => {
-    if (err) {
-      log('error', err)
-      return next('token not found')
-    }
-
-    const $ = cheerio.load(body)
-    data.token = $('input[name=lt]').val()
-
-    log('info', 'Token retrieved')
-    return next()
-  })
+function getToken () {
+  log('info', 'Logging in on Sfr RED Website...')
+  return rq('https://www.sfr.fr/bounce?target=//www.sfr.fr/sfr-et-moi/bounce.html&casforcetheme=mire-sfr-et-moi&mire_layer')
+  .then($ => $('input[name=lt]').val())
 }
 
-// Procedure to login to Sfr website.
-function logIn (requiredFields, bills, data, next) {
-  const options = {
+function logIn (token, fields) {
+  return rq({
     method: 'POST',
     url: 'https://www.sfr.fr/cas/login?domain=mire-sfr-et-moi&service=https://www.sfr.fr/accueil/j_spring_cas_security_check#sfrclicid=EC_mire_Me-Connecter',
     form: {
-      lt: data.token,
+      lt: token,
       execution: 'e1s1',
       _eventId: 'submit',
-      username: requiredFields.login,
-      password: requiredFields.password,
+      username: fields.login,
+      password: fields.password,
       identifier: ''
     }
-  }
-
-  log('info', 'Logging in on Sfr website...')
-  request(options, (err, res, body) => {
-    if (err) {
-      log('error', err)
-      return next('LOGIN_FAILED')
-    }
-
-    // check if an element with class error-icon is present
-    const $ = cheerio.load(body)
+  })
+  .then($ => {
     const badLogin = $('#username').length > 0
-    if (badLogin) {
-      return next('LOGIN_FAILED')
-    }
-
-    log('info', 'Successfully logged in.')
-    return next()
+    if (badLogin) throw new Error('bad login')
+  })
+  .catch(err => {
+    log('info', err.message, 'Error while logging in')
+    throw new Error('LOGIN_FAILED')
   })
 }
 
 function fetchBillingInfo (requiredFields, bills, data, next) {
-  const url = 'https://espace-client.sfr.fr/facture-mobile/consultation'
-
-  log('info', 'Fetch bill info')
-  const options = {
-    method: 'GET',
-    url
-  }
-  request(options, (err, res, body) => {
-    if (err) {
-      log('error', 'An error occured while fetching bills')
-      log('error', err)
-      return next('request error')
-    }
-    log('info', 'Fetch bill info succeeded')
-
-    data.html = body
-    return next()
+  log('info', 'Fetching bill info')
+  return rq('https://espace-client.sfr.fr/facture-mobile/consultation')
+  .catch(err => {
+    log('error', err.message, 'Error while fetching billing info')
+    throw err
   })
 }
 
-function parsePage (requiredFields, bills, data, next) {
-  bills.fetched = []
+function parsePage ($) {
+  const result = []
   moment.locale('fr')
-  const $ = cheerio.load(data.html)
   const baseURL = 'https://espace-client.sfr.fr'
 
   const firstBill = $('#facture')
@@ -131,13 +79,13 @@ function parsePage (requiredFields, bills, data, next) {
 
     const bill = {
       date: firstBillDate,
-      type: 'Mobile',
       amount: parseFloat(price),
-      pdfurl: `${baseURL}${firstBillUrl}`,
-      vendor: 'Sfr'
+      fileurl: `${baseURL}${firstBillUrl}`,
+      filename: `${firstBillDate.format('YYYY_MM')}_SfrRed.pdf`,
+      vendor: 'SFR RED'
     }
 
-    bills.fetched.push(bill)
+    result.push(bill)
   } else {
     log('info', 'wrong url for first PDF bill.')
   }
@@ -159,26 +107,18 @@ function parsePage (requiredFields, bills, data, next) {
 
       const bill = {
         date,
-        type: 'Mobile',
         amount: prix,
-        pdfurl: pdf,
-        vendor: 'Sfr'
+        fileurl: pdf,
+        filename: `${date.format('YYYY_MM')}_SfrRed.pdf`
       }
-      bills.fetched.push(bill)
+
+      result.push(bill)
     } else {
       log('info', 'wrong url for PDF bill.')
     }
   })
 
   log('info', 'Successfully parsed the page')
-  next()
-}
 
-function customFilterExisting (requiredFields, bills, data, next) {
-  filterExisting(null, Bill)(requiredFields, bills, data, next)
-}
-
-function customSaveDataAndFile (requiredFields, bills, data, next) {
-  const fnsave = saveDataAndFile(null, Bill, 'sfr', ['bill'])
-  fnsave(requiredFields, bills, data, next)
+  return result
 }
