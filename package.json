@@ -1,10 +1,10 @@
 {
-  "name": "cozy-konnector-sfrred",
+  "name": "cozy-konnector-redmobile",
   "version": "1.0.0",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cozy/cozy-konnector-sfrred.git"
+    "url": "git+https://github.com/cozy/cozy-konnector-redmobile.git"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +18,7 @@
     "dev": "cozy-konnector-dev",
     "standalone": "cozy-konnector-standalone",
     "build": "webpack",
-    "deploy": "git-directory-deploy --directory build/ --branch build --repo=https://github.com/cozy/cozy-konnector-sfrred.git"
+    "deploy": "git-directory-deploy --directory build/ --branch build --repo=https://github.com/cozy/cozy-konnector-redmobile.git"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^4.0.1",
