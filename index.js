@@ -2,7 +2,7 @@ const moment = require('moment')
 
 const {log, BaseKonnector, addData, filterData, saveFiles, request, retry} = require('cozy-konnector-libs')
 
-const rq = request({
+let rq = request({
   cheerio: true,
   json: false,
   jar: true,
@@ -22,7 +22,7 @@ module.exports = new BaseKonnector(function fetch (fields) {
     interval: 5000,
     throw_original: true
   }))
-  .then(entries => saveFiles(entries, fields.folderPath, Date.now() + 60 * 1000))
+  .then(entries => saveFiles(entries, fields.folderPath, { timeout: Date.now() + 60 * 1000 }))
   .then(entries => filterData(entries, DOCTYPE))
   .then(entries => addData(entries, DOCTYPE))
   .catch(err => {
