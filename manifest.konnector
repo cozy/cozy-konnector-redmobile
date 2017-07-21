@@ -2,8 +2,8 @@
   "version": "1.0.0",
   "name": "SFR RED",
   "type": "node",
-  "slug": "sfrred",
-  "source": "git://github.com/cozy/cozy-konnector-sfrred.git",
+  "slug": "redmobile",
+  "source": "git://github.com/cozy/cozy-konnector-redmobile.git",
   "fields": {
     "save_folder": {
       "doctype": "io.cozy.files",
@@ -11,7 +11,7 @@
     },
     "account": {
       "doctype": "io.cozy.accounts",
-      "account_type": "sfrred",
+      "account_type": "redmobile",
       "accountFormat": "login,password"
     }
   },

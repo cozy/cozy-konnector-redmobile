@@ -1,4 +1,4 @@
-[Cozy][cozy] SFR RED konnector
+[Cozy][cozy] SFR RED mobile konnector
 =================================
 
 What's Cozy?
@@ -12,7 +12,7 @@ What's Cozy?
 What's this new konnector?
 --------------------------
 
-A connector to retrieve your SFR RED bills and billing data and save them into your Cozy.
+A connector to retrieve your SFR RED mobile bills and billing data and save them into your Cozy.
 
 ### Open a Pull-Request
 
@@ -70,7 +70,7 @@ The connector is run by calling npm start with the following envrionment variabl
       "arguments":{
         "account":"cf31eaef5d899404a7e8c3737c1c2d1f",
         "folder_to_save":"folderPath",
-        "slug":"sfrred"
+        "slug":"redmobile"
       }
     }
   }
@@ -103,7 +103,7 @@ git push origin build
 
 And your konnector can now be installed using the following url :
 
-git://github.com/cozy/cozy-konnector-sfrred.git#build
+git://github.com/cozy/cozy-konnector-redmobile.git#build
 
 ### Maintainer
 
@@ -123,7 +123,7 @@ You can reach the Cozy Community by:
 License
 -------
 
-SFR RED cozy konnector is developed by @doubleface and distributed under the [AGPL v3 license][agpl-3.0].
+SFR RED mobile cozy konnector is developed by @doubleface and distributed under the [AGPL v3 license][agpl-3.0].
 
 [cozy]: https://cozy.io "Cozy Cloud"
 [agpl-3.0]: https://www.gnu.org/licenses/agpl-3.0.html
