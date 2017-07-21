@@ -1,6 +1,6 @@
 const moment = require('moment')
 
-const {log, BaseKonnector, addData, filterData, saveFiles, request, retry} = require('cozy-konnector-libs')
+const {log, BaseKonnector, saveBills, request, retry} = require('cozy-konnector-libs')
 
 let rq = request({
   cheerio: true,
@@ -9,8 +9,6 @@ let rq = request({
   // debug: true,
   headers: {}
 })
-
-const DOCTYPE = 'io.cozy.bills'
 
 module.exports = new BaseKonnector(function fetch (fields) {
   return retry(getToken, {
@@ -22,9 +20,7 @@ module.exports = new BaseKonnector(function fetch (fields) {
     interval: 5000,
     throw_original: true
   }))
-  .then(entries => saveFiles(entries, fields.folderPath, { timeout: Date.now() + 60 * 1000 }))
-  .then(entries => filterData(entries, DOCTYPE))
-  .then(entries => addData(entries, DOCTYPE))
+  .then(entries => saveBills(entries, fields.folderPath, { timeout: Date.now() + 60 * 1000 }))
   .catch(err => {
     // Connector is not in error if there is not entry in the end
     // It may be simply an empty account
