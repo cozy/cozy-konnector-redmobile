@@ -20,7 +20,10 @@ module.exports = new BaseKonnector(function fetch (fields) {
     interval: 5000,
     throw_original: true
   }))
-  .then(entries => saveBills(entries, fields.folderPath, { timeout: Date.now() + 60 * 1000 }))
+  .then(entries => saveBills(entries, fields.folderPath, {
+    timeout: Date.now() + 60 * 1000,
+    identifiers: 'SFR RED'
+  }))
   .catch(err => {
     // Connector is not in error if there is not entry in the end
     // It may be simply an empty account
@@ -100,7 +103,7 @@ function parsePage ($) {
                                                     .replace(',', '.')
 
     const bill = {
-      date: firstBillDate,
+      date: firstBillDate.toDate(),
       amount: parseFloat(price),
       fileurl: `${baseURL}${firstBillUrl}`,
       filename: getFileName(firstBillDate),
@@ -128,10 +131,11 @@ function parsePage ($) {
       pdf = `${baseURL}${pdf}`
 
       const bill = {
-        date,
+        date: date.toDate(),
         amount: prix,
         fileurl: pdf,
-        filename: getFileName(date)
+        filename: getFileName(date),
+        vendor: 'SFR RED'
       }
 
       result.push(bill)
