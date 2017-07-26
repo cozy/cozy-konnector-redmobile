@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "name": "SFR RED",
+  "name": "SFR RED mobile",
   "type": "node",
   "slug": "redmobile",
   "source": "git://github.com/cozy/cozy-konnector-redmobile.git",
