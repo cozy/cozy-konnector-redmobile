@@ -22,7 +22,7 @@ module.exports = new BaseKonnector(function fetch (fields) {
   }))
   .then(entries => saveBills(entries, fields.folderPath, {
     timeout: Date.now() + 60 * 1000,
-    identifiers: 'SFR RED'
+    identifiers: 'sfr'
   }))
   .catch(err => {
     // Connector is not in error if there is not entry in the end
