@@ -17,6 +17,8 @@
     "start": "node index.js",
     "dev": "cozy-konnector-dev",
     "standalone": "cozy-konnector-standalone",
+    "standalone:record": "REPLAY=record cozy-konnector-standalone",
+    "standalone:replay": "REPLAY=replay cozy-konnector-standalone",
     "build": "webpack",
     "deploy": "git-directory-deploy --directory build/ --branch build --repo=https://github.com/cozy/cozy-konnector-redmobile.git"
   },
