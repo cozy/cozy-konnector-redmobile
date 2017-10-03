@@ -10,13 +10,17 @@
   "author": "",
   "license": "AGPL-3.0",
   "dependencies": {
-    "cozy-konnector-libs": "^3.0.0-alpha.19",
+    "bluebird": "^3.5.0",
+    "cheerio": "^1.0.0-rc.2",
+    "cozy-konnector-libs": "^3.0.2",
     "moment": "^2.18.1"
   },
   "scripts": {
     "start": "node index.js",
     "dev": "cozy-konnector-dev",
     "standalone": "cozy-konnector-standalone",
+    "standalone:record": "REPLAY=record cozy-konnector-standalone",
+    "standalone:replay": "REPLAY=replay cozy-konnector-standalone",
     "build": "webpack",
     "deploy": "git-directory-deploy --directory build/ --branch build --repo=https://github.com/cozy/cozy-konnector-redmobile.git"
   },
