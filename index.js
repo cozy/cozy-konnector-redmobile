@@ -20,7 +20,9 @@ module.exports = new BaseKonnector(function fetch (fields) {
   .then(token => logIn(token, fields))
   .then(() => retry(fetchBillsAttempts, {
     interval: 5000,
-    throw_original: true
+    throw_original: true,
+    // do not retry if we get the LOGIN_FAILED error code
+    predicate: err => err.message !== 'LOGIN_FAILED'
   }))
   .then(entries => saveBills(entries, fields.folderPath, {
     timeout: Date.now() + 60 * 1000,
@@ -40,6 +42,7 @@ function getToken () {
   return rq('https://www.sfr.fr/bounce?target=//www.sfr.fr/sfr-et-moi/bounce.html&casforcetheme=mire-sfr-et-moi&mire_layer')
   .then($ => $('input[name=lt]').val())
   .then(token => {
+    log('debug', token, 'TOKEN')
     if (!token) throw new Error('BAD_TOKEN')
     return token
   })
@@ -59,6 +62,7 @@ function logIn (token, fields) {
     }
   })
   .then($ => {
+    // check that the login is OK
     const badLogin = $('#username').length > 0
     if (badLogin) throw new Error('bad login')
   })
@@ -80,9 +84,14 @@ function fetchBillsAttempts () {
 function fetchBillingInfo () {
   log('info', 'Fetching bill info')
   return rq('https://espace-client-red.sfr.fr/facture-mobile/consultation')
-  .catch(err => {
-    log('error', err.message, 'Error while fetching billing info')
-    throw err
+  .then($ => {
+    if ($('input[name^=TS01]').length > 0) {
+      // this is the case where the user identified himself with sfr login
+      log('error', 'This is sfr identifier, should use redmobile identifiers')
+      throw new Error('LOGIN_FAILED')
+    }
+
+    return $
   })
 }
 
